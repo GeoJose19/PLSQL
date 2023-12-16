@@ -1,0 +1,77 @@
+#ACCEPT USER INPUT NUMBER
+declare
+a number;
+begin
+dbms_output.put_line('Entered  Number Is :: '||&a);
+end;
+/
+
+
+#PACKAGE
+create or replace package stud_package IS
+procedure add_stud(p_id student.id%type,p_name student.name%type,p_marks student.marks%type);
+function calc_marks(p_id student.id%type) return number;
+end stud_package;
+/
+
+
+create or replace package body stud_package IS
+procedure add_stud(p_id student.id%type,p_name student.name%type,p_marks student.marks%type) IS
+begin
+insert into student values(p_id,p_name,p_marks);
+end add_stud;
+function calc_marks(p_id student.id%type) return number IS
+begin
+update student set marks=marks*10 where id=p_id;
+return 0;
+end calc_marks;
+end;
+/
+
+#CURSOR
+create or replace procedure getinfo IS
+p_name student.name%type;
+p_marks student.marks%type;
+cursor stud_cursor IS
+select name,marks from student where marks<100;
+begin
+open stud_cursor;
+loop
+fetch stud_cursor into p_name,p_marks;
+exit when stud_cursor%NOTFOUND;
+dbms_output.put_line('NAME:: '||p_name||' MARKS::'||p_marks);
+end loop;
+close stud_cursor;
+end;
+/
+
+#FUNCTION WITH RETURNED RECORD
+create or replace function calc_marks(p_id student.id%type) return number IS
+updatedmarks student.marks%type;
+begin
+update student set marks=marks*10 where id=p_id returning marks into updatedmarks;
+dbms_output.put_line('UPDATED MARKS IS:: '||updatedmarks);
+return updatedmarks;
+end;
+/
+
+
+#TRIGGER
+create or replace trigger stud_trigger 
+before update on student
+for each row
+begin
+:NEW.modified:=CURRENT_TIMESTAMP;
+dbms_output.put_line('MODIFIED THE TIME');
+end;
+/
+
+create or replace trigger marks_trigger 
+before update on student
+for each row
+begin
+if :NEW.marks<:OLD.marks then
+RAISE_APPLICATION_ERROR(-20125,'NEW MARKS SHOULD NOT BE LESSER THAN OLD MARKS');
+end if;
+end;
+/
